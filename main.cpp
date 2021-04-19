@@ -1,6 +1,6 @@
-/**
-* Ö÷³ÌĞò
-*/
+ï»¿/**
+ * ä¸»ç¨‹åº
+ */
 
 #include <iostream>
 #include <string.h>
@@ -11,8 +11,12 @@ int main() {
 
 	//std::string file_name("tenMillion_0.txt");
 	//std::string file_name("new.txt");
-	std::string file_name("E:\\Ö£Öİµç¶¯³µÊı¾İ\\trackdata\\trackdata.txt");
-	//std::string file_name("E:\\Ö£Öİµç¶¯³µÊı¾İ\\trackdata\\billion\\billion_10.txt");
+	std::string file_name("E:\\éƒ‘å·ç”µåŠ¨è½¦æ•°æ®\\trackdata\\partial_data.txt");
+	//std::string file_name("E:\\éƒ‘å·ç”µåŠ¨è½¦æ•°æ®\\trackdata\\trackdata.txt");
+	//std::string file_name("E:\\éƒ‘å·ç”µåŠ¨è½¦æ•°æ®\\trackdata\\billion\\billion_10.txt");
 	fread_file(file_name);
 	//std::cout << (int)ceil(log(500) / log(10)) << std::endl;
+
+
+	return 0;
 }

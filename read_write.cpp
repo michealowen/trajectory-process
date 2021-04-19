@@ -1,27 +1,34 @@
-#include <stdio.h>
+ï»¿#include <stdio.h>
 #include <iostream>
 #include <unordered_map>
 #include <chrono>
 #include <string.h>
-#include<math.h>		// ÓÃÓÚ¼ÆËãidÈ¡ºó¼¸Î»
+#include<math.h>		// ç”¨äºè®¡ç®—idå–åå‡ ä½
+
 #include "read_write.h"
- 
+
+// æ–‡ä»¶åºå·ä¸æ–‡ä»¶æ ‡è¯†ç¬¦çš„æ˜ å°„, å¦‚key:000, value:000.txt
 std::unordered_map<int, FILE*> m;
-// È«¾ÖÊı×é,Êı×éÔªËØÊÇ¿éµÄÖ¸Õë
+// å…¨å±€æ•°ç»„,æ•°ç»„å…ƒç´ æ˜¯å—çš„æŒ‡é’ˆ
 char* block[MAP_SIZE] = { nullptr };
-// È«¾ÖÊı×é,Êı×éÔªËØÊÇÃ¿¸ö¿é×Ö½ÚÊı,Ğ´ÈëÇ°²»ÄÜ³¬¹ı5,000,000×Ö½Ú,Ô¼5MB
+// å…¨å±€æ•°ç»„,æ•°ç»„å…ƒç´ æ˜¯æ¯ä¸ªå—å­—èŠ‚æ•°,å†™å…¥å‰ä¸èƒ½è¶…è¿‡5,000,000å­—èŠ‚,çº¦5MB
 int block_size[MAP_SIZE] = { 0 };
 
-// ´ò¿ªÎÄ¼ş
+
+/*
+ * æ‰“å¼€å†™çš„æ–‡ä»¶
+ */
 void write_file_open() {
-	char file_name[] = { 'D',':','\\','d','a','t','a','\\','0','0','0','.','t','x','t','\0' };
+
+	char file_name[] = { 'D',':','\\','d','d','d','d','\\','0','0','0','.','t','x','t','\0' };
+	//char file_name[] = { 'D',':','\\','d','a','t','a','\\','0','0','0','.','t','x','t','\0' };
 	for (int i = 0; i < MAP_SIZE; ++i) {
 		m[i] = fopen(file_name, "w");
 		if (m[i] == nullptr)
 			std::cout << "open write file failed" << std::endl;
 		if (file_name[10] == '9') {
 			file_name[10] = '0';
-			if (file_name[9] == '9'){
+			if (file_name[9] == '9') {
 				file_name[9] = '0';
 				++file_name[8];
 			}
@@ -35,10 +42,12 @@ void write_file_open() {
 	}
 }
 
-// ¹Ø±ÕÎÄ¼şÁ÷
+/**
+ * å…³é—­æ–‡ä»¶æµ
+ */
 void write_file_close() {
 	for (int i = MAP_SIZE - 1; i > 0; --i) {
-		// ÅĞ¶ÏÎÄ¼şÃèÊö·ûÊÇ·ñ´ò¿ª
+		// åˆ¤æ–­æ–‡ä»¶æè¿°ç¬¦æ˜¯å¦æ‰“å¼€
 		if (m[i] != nullptr) {
 			fclose(m[i]);
 			m[i] = nullptr;
@@ -46,16 +55,20 @@ void write_file_close() {
 	}
 }
 
-// ½«Êı¾İ¿éĞ´ÈëÎÄ¼ş
+/**
+ * å°†æ•°æ®å—å†™å…¥æ–‡ä»¶
+ */
 void fwrite_file(const int key) {
-	// ÏÈ»ñÈ¡ÎÄ¼şÃèÊö·û
+	// å…ˆè·å–æ–‡ä»¶æè¿°ç¬¦
 	fwrite(block[key], sizeof(char), block_size[key], m[key]);
 }
 
-// freeÊÖ¶¯·ÖÅäµÄÄÚ´æ
+/**
+ * é‡Šæ”¾æ‰‹åŠ¨åˆ†é…çš„å†…å­˜
+ */
 void free_block() {
 	for (int i = 0; i < MAP_SIZE; ++i) {
-		// freeÇ°Çå¿Õ»º³åÇø
+		// freeå‰æ¸…ç©ºç¼“å†²åŒº
 		if (block[i] != nullptr) {
 			fwrite_file(i);
 			block_size[i] = 0;
@@ -65,41 +78,46 @@ void free_block() {
 	}
 }
 
-// ½«ĞĞĞ´ÈëÊı¾İ¿é£¬±»fread_lineµ÷ÓÃ
-void fwrite_block(const char* line,const int key) {
-	// ÅĞ¶Ï½«ÒªĞ´ÈëµÄÊı¾İ¿éÊÇ²»ÊÇNULLÖ¸Õë
+/**
+ * å°†è¡Œå†™å…¥æ•°æ®å—ï¼Œè¢«fread_lineè°ƒç”¨
+ */
+void fwrite_block(const char* line, const int key) {
+	// åˆ¤æ–­å°†è¦å†™å…¥çš„æ•°æ®å—æ˜¯ä¸æ˜¯NULLæŒ‡é’ˆ
 	if (block[key] == nullptr)
 		block[key] = (char*)malloc(BLOCK_SIZE * sizeof(char));
 
 	size_t line_size = strlen(line);
-	// ÏÈÅĞ¶Ï¼ÓÉÏ¸ÃĞĞºóÊÇ·ñ³¬³ö¿é´óĞ¡
+	// å…ˆåˆ¤æ–­åŠ ä¸Šè¯¥è¡Œåæ˜¯å¦è¶…å‡ºå—å¤§å°
 	if (block_size[key] + line_size > BLOCK_SIZE) {
-		// ÏòÎÄ¼şÖĞĞ´Èë¸Ã¿é
+		// å‘æ–‡ä»¶ä¸­å†™å…¥è¯¥å—
 		fwrite_file(key);
-		// ½«¿é´óĞ¡ÖÃÎª0
+		// å°†å—å¤§å°ç½®ä¸º0
 		block_size[key] = 0;
 	}
 
-	// Ïò¿éÖĞĞ´Êı¾İ,²»°üÀ¨lineºóÃæµÄ'\0'
+	// å‘å—ä¸­å†™æ•°æ®,ä¸åŒ…æ‹¬lineåé¢çš„'\0'
 	for (int i = 0; i < line_size; ++i) {
 		*(block[key] + block_size[key]++) = *(line + i);
 	}
 }
 
-// ´¦ÀíÒ»ĞĞÊı¾İ£¬Êı¾İÒÔ'/n'½áÎ²
+/**
+ * å¤„ç†ä¸€è¡Œæ•°æ®ï¼Œæ•°æ®ä»¥'/n'ç»“å°¾
+ */
 void fread_line(char* line) {
 	char* cur_ptr = line;
-	char new_line[LINE_SIZE];		// ´æ´¢ id£¬Ê±¼ä£¬¾­¶È£¬Î³¶È£¬ËÙ¶È£¬·½Î»½Ç£¬Êı¾İÀ´Ô´£¬ÔË¶¯×´Ì¬
+	char new_line[LINE_SIZE];
+	// å­˜å‚¨ idï¼Œæ—¶é—´ï¼Œç»åº¦ï¼Œçº¬åº¦ï¼Œé€Ÿåº¦ï¼Œæ–¹ä½è§’ï¼Œæ•°æ®æ¥æºï¼Œè¿åŠ¨çŠ¶æ€
 	char* new_line_ptr = new_line;
 	int i = 0;
 	int key = 0;
-	// Ö¸ÕëÖ¸ÏòµÚÒ»Î»
-	// ¶Áid
+	// æŒ‡é’ˆæŒ‡å‘ç¬¬ä¸€ä½
+	// è¯»id
 	while (*cur_ptr != '\t') {
 		*new_line_ptr++ = *cur_ptr++;
 	}
 
-	// È¡³öidºókÎ»,¸ù¾İMAP_SIZE¶øÈ·¶¨
+	// å–å‡ºidåkä½,æ ¹æ®MAP_SIZEè€Œç¡®å®š
 	int k = (int)ceil(log(MAP_SIZE) / log(10));
 	for (i = 0; i < k; ++i) {
 		if (cur_ptr - line == i + 1) {
@@ -111,7 +129,7 @@ void fread_line(char* line) {
 	i = 0;
 	key %= MAP_SIZE;
 
-	if (key < 0 || key>MAP_SIZE-1) {
+	if (key < 0 || key>MAP_SIZE - 1) {
 		char* tmp = line;
 		while (tmp != cur_ptr) {
 			std::cout << *tmp << std::endl;
@@ -119,99 +137,120 @@ void fread_line(char* line) {
 		}
 	}
 
-	++cur_ptr;	// Ìø¹ı'\t'
-	*new_line_ptr++ = '\t';		// ÒÔ'\t'¸ô¿ªidÓëÊ±¼ä
+	++cur_ptr;	// è·³è¿‡'\t'
+	*new_line_ptr++ = '\t';		// ä»¥'\t'éš”å¼€idä¸æ—¶é—´
 
-	// ¶ÁÊ±¼ä£¬Ê±¼ä¹²19¸ö×Ö·û
+	// è¯»æ—¶é—´ï¼Œæ—¶é—´å…±19ä¸ªå­—ç¬¦
 	while (i++ < 19) {
 		*new_line_ptr++ = *cur_ptr++;
 	}
-	*new_line_ptr++ = '\t';		// ÒÔ'\t'¸ô¿ªÊ±¼äÓë¾­¶È
+	*new_line_ptr++ = '\t';		// ä»¥'\t'éš”å¼€æ—¶é—´ä¸ç»åº¦
 
-	// Ìø¹ıÈı¸ö'\t'
+	// è·³è¿‡ä¸‰ä¸ª'\t'
 	i = 0;
 	while (i < 3) {
 		if (*cur_ptr++ == '\t')
 			++i;
 	}
 
-	// ¶ÁÈ¡¾­¶È
-	while (*cur_ptr != '\t') {
-		*new_line_ptr++ = *cur_ptr++;
-	}
-	++cur_ptr;
-	*new_line_ptr++ = '\t';		// ÒÔ'\t'¸ô¿ª¾­¶ÈÓëÎ³¶È
-	//¶ÁÈ¡Î³¶È
-	while (*cur_ptr != '\t') {
-		*new_line_ptr++ = *cur_ptr++;
-	}
-	++cur_ptr;
-	*new_line_ptr++ = '\t';		// ÒÔ'\t'¸ô¿ªÎ³¶ÈÓëËÙ¶È
-	//¶ÁÈ¡ËÙ¶È
-	while (*cur_ptr != '\t') {
-		*new_line_ptr++ = *cur_ptr++;
-	}
-	++cur_ptr;
-	*new_line_ptr++ = '\t';		// ÒÔ'\t'¸ô¿ªËÙ¶ÈÓë·½Î»½Ç
-	//¶ÁÈ¡·½Î»½Ç
-	while (*cur_ptr != '\t') {
-		*new_line_ptr++ = *cur_ptr++;
-	}
-	++cur_ptr;
-	*new_line_ptr++ = '\t';		// ÒÔ'\t'¸ô¿ª·½Î»½ÇÓëÊı¾İÀ´Ô´
+	// ç»çº¬åº¦å­—ç¬¦ä¸²ä½æ•°
+	int lon_num = 0, lat_num = 0;
 
-	// Ìø¹ıÎÀĞÇÊı
+	// è¯»å–ç»åº¦
+	while (*cur_ptr != '\t') {
+		*new_line_ptr++ = *cur_ptr++;
+		++lon_num;
+	}
+	// åˆ¤æ–­ç»åº¦èŒƒå›´, è‹¥ä¸å±äºç»™å®šèŒƒå›´, åˆ™ç›´æ¥return 
+	if (check_location(cur_ptr - lon_num, lon_num) == false)
+		return;
+	++cur_ptr;
+	*new_line_ptr++ = '\t';		// ä»¥'\t'éš”å¼€ç»åº¦ä¸çº¬åº¦
+
+
+	//è¯»å–çº¬åº¦
+	while (*cur_ptr != '\t') {
+		*new_line_ptr++ = *cur_ptr++;
+		++lat_num;
+	}
+	++cur_ptr;
+	*new_line_ptr++ = '\t';		// ä»¥'\t'éš”å¼€çº¬åº¦ä¸é€Ÿåº¦
+	//è¯»å–é€Ÿåº¦
+	while (*cur_ptr != '\t') {
+		//*new_line_ptr++ = *cur_ptr++;
+		// è·³è¿‡é€Ÿåº¦
+		*cur_ptr++;
+	}
+	++cur_ptr;
+	*new_line_ptr++ = '\t';		// ä»¥'\t'éš”å¼€é€Ÿåº¦ä¸æ–¹ä½è§’
+	//è¯»å–æ–¹ä½è§’
+	while (*cur_ptr != '\t') {
+		//*new_line_ptr++ = *cur_ptr++;
+		// è·³è¿‡æ–¹ä½è§’åº¦
+		*cur_ptr++;
+	}
+	++cur_ptr;
+	*new_line_ptr++ = '\t';		// ä»¥'\t'éš”å¼€æ–¹ä½è§’ä¸æ•°æ®æ¥æº
+
+	// è·³è¿‡å«æ˜Ÿæ•°
 	i = 0;
 	while (i < 1) {
 		if (*cur_ptr++ == '\t')
 			++i;
 	}
 
-	//¶ÁÈ¡Êı¾İÀ´Ô´
+	//è¯»å–æ•°æ®æ¥æº
 	while (*cur_ptr != '\t') {
 		*new_line_ptr++ = *cur_ptr++;
 	}
 
 	++cur_ptr;
-	*new_line_ptr++ = '\t';		// ÒÔ'\t'¸ô¿ªÓëÊı¾İÀ´Ô´ÓëÔË¶¯×´Ì¬
+	*new_line_ptr++ = '\t';		// ä»¥'\t'éš”å¼€ä¸æ•°æ®æ¥æºä¸è¿åŠ¨çŠ¶æ€
 
-	// Ìø¹ı¹©µç·½Ê½
+	// è·³è¿‡ä¾›ç”µæ–¹å¼
 	i = 0;
 	while (i < 1) {
 		if (*cur_ptr++ == '\t')
 			++i;
 	}
 
-	//¶ÁÈ¡ÔË¶¯×´Ì¬
+	//è¯»å–è¿åŠ¨çŠ¶æ€
 	while (*cur_ptr != '\t') {
-		*new_line_ptr++ = *cur_ptr++;
+		//*new_line_ptr++ = *cur_ptr++;
+		// è·³è¿‡è¿åŠ¨çŠ¶æ€
+		*cur_ptr++;
 	}
 	++cur_ptr;
 	*new_line_ptr++ = '\n';
 	*new_line_ptr++ = '\0';
 	//printf("%s\n",new_line);
-	fwrite_block(new_line, key);	//µ÷ÓÃfwrite_block ,½«ĞĞĞ´Èë¿é
-	// ½«Ö¸ÕëÖÃ¿Õ
+	fwrite_block(new_line, key);	//è°ƒç”¨fwrite_block ,å°†è¡Œå†™å…¥å—
+	// å°†æŒ‡é’ˆç½®ç©º
 	cur_ptr = nullptr;
 	new_line_ptr = nullptr;
 }
 
-// ½âÎöÊı¾İ¿é£¬·µ»ØĞèÒª»ØÍËµÄ×Ö½ÚÊı£¬Êı¾İ¿éµÄ×îºóÒ»¸ö×Ö·ûÎª'\0'
+/**
+ * è§£ææ•°æ®å—, è¿”å›éœ€è¦å›é€€çš„å­—èŠ‚æ•°, æ•°æ®å—çš„æœ€åä¸€ä¸ªå­—ç¬¦ä¸º'\0'
+ */
 int fread_block(char* block) {
-	// Ã¿¶Áµ½Ò»¸ö'\n',¾Í¶ÁÈ¡Ò»ĞĞ
+	// æ¯è¯»åˆ°ä¸€ä¸ª'\n',å°±è¯»å–ä¸€è¡Œ
 	char* cur_ptr = block;
+	// æ¯ä¸€è¡Œçš„å†…å®¹
 	char line[LINE_SIZE];
+	// æ¯ä¸€è¡Œé•¿åº¦
 	int line_size = 0;
+	// è¡Œæ•°é‡
 	int line_count = 0;
 	//int i = 0;
 	while (*cur_ptr != '\0') {
-		// µ±¶Áµ½Ä³Ò»ĞĞÄ©Î²Ê±
+		// å½“è¯»åˆ°æŸä¸€è¡Œæœ«å°¾æ—¶
 		if (*cur_ptr == '\n') {
-			// ĞĞÊıÁ¿×ÔÔö
+			// è¡Œæ•°é‡è‡ªå¢
 			++line_count;
-			// line¶ÁÈë'\n'
+			// lineè¯»å…¥'\n'
 			line[line_size++] = *cur_ptr++;
-			// lineÒÔ'\0'½áÎ²
+			// lineä»¥'\0'ç»“å°¾
 			line[line_size] = '\0';
 			fread_line(line);
 			line_size = 0;
@@ -225,33 +264,35 @@ int fread_block(char* block) {
 	return line_size;
 }
 
-// Ê¹ÓÃfread¶ÁÈ¡Êı¾İ
+/**
+ * ä½¿ç”¨freadè¯»å–æ–‡ä»¶
+ */
 void fread_file(std::string& file_name) {
 
-	// ´ò¿ªĞ´µÄÎÄ¼ş
+	// æ‰“å¼€å†™çš„æ–‡ä»¶
 	write_file_open();
-	// ´ò¿ª¶ÁµÄÎÄ¼ş 'rb'Ä£Ê½¶ÁÈ¡µÄ»»ĞĞ·ûºÍÔ´ÎÄ¼şÖĞ±£³ÖÒ»ÖÂ
+	// æ‰“å¼€è¯»çš„æ–‡ä»¶ 'rb'æ¨¡å¼è¯»å–çš„æ¢è¡Œç¬¦å’Œæºæ–‡ä»¶ä¸­ä¿æŒä¸€è‡´
 	//FILE* fp = nullptr;	
 	FILE* fp = fopen(file_name.c_str(), "rb");
-	// ÅĞ¶Ï¶ÁÎÄ¼şÊÇ·ñ´ò¿ªÊ§°Ü
+	// åˆ¤æ–­è¯»æ–‡ä»¶æ˜¯å¦æ‰“å¼€å¤±è´¥
 	if (fp == nullptr)
 		std::cout << "open read file failed" << std::endl;
 
-	//Ê×ÏÈÒªÌø¹ıµÚÒ»ĞĞ
+	//é¦–å…ˆè¦è·³è¿‡ç¬¬ä¸€è¡Œ
 	while (getc(fp) != '\n') {
 	}
 
 	char block[BLOCK_SIZE];
 	size_t block_size = BLOCK_SIZE;
 
-	int backwards = 0;		// ĞèÒª»ØÍËµÄ×Ö½ÚÊı
+	int backwards = 0;		// éœ€è¦å›é€€çš„å­—èŠ‚æ•°
 	int i = 0;
 	auto t = clock();
 
 	char temp[1];
 
 	while (!feof(fp)) {
-		// Í¨¹ı·µ»ØÖµÅĞ¶Ï¶Áµ½ÄÄÁË
+		// é€šè¿‡è¿”å›å€¼åˆ¤æ–­è¯»åˆ°å“ªäº†
 		size_t t = fread(block, sizeof(char), block_size - 1, fp);
 		//std::cout << ftell(fp) << std::endl;
 		//std::cout << t << std::endl;
@@ -267,7 +308,7 @@ void fread_file(std::string& file_name) {
 			block[block_size - 1] = '\0';
 			backwards = fread_block(block);
 			fseek(fp, -backwards * sizeof(char), SEEK_CUR);
-			// ¼ìÑé¶ÁĞ´Ö¸ÕëÊÇ·ñÕıÈ·µØ»Øµ½ĞĞÊ×
+			// æ£€éªŒè¯»å†™æŒ‡é’ˆæ˜¯å¦æ­£ç¡®åœ°å›åˆ°è¡Œé¦–
 			fseek(fp, -1, SEEK_CUR);
 			fread(temp, sizeof(char), 1, fp);
 			if (temp[0] != '\n')
@@ -278,11 +319,11 @@ void fread_file(std::string& file_name) {
 			std::cout << i / 1000 << std::endl;
 	}
 	std::cout << clock() - t << std::endl;
-	// °ÑÊÖ¶¯·ÖÅäµÄ¿Õ¼äfreeµô
+	// æŠŠæ‰‹åŠ¨åˆ†é…çš„ç©ºé—´freeæ‰
 	free_block();
-	// ¹Ø±ÕĞ´ÎÄ¼şÁ÷
+	// å…³é—­å†™æ–‡ä»¶æµ
 	write_file_close();
-	// ¹Ø±Õ¶ÁÎÄ¼şÁ÷
+	// å…³é—­è¯»æ–‡ä»¶æµ
 	fclose(fp);
 	fp = nullptr;
 }
