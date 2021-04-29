@@ -1,18 +1,17 @@
-/**
- * нд╪Чпч╦д
- * 1.нд╪Ч╟╢вж╤неепР
- * 2.нд╪Чвж╤нв╙╩╩(й╠╪Дв╙╩╩н╙й╠╪Д╢а)
+О╩©/**
+ * Ф√┤Д╩╤Д©╝Ф■╧
+ * 1.Ф√┤Д╩╤Ф▄┴Е╜≈Ф╝╣Ф▌▓Е╨▐
+ * 2.Ф√┤Д╩╤Е╜≈Ф╝╣Х╫╛Ф█╒(Ф≈╤И≈╢Х╫╛Ф█╒Д╦╨Ф≈╤И≈╢Ф┬Ё)
  */
 
 #include "file_modify.h"
 #include <iostream>
 
-// ╟╢пп╤анд╪Ч
-void read_file(std::string &file_name) {
-    FILE* fp = nullptr;
-    fp = fopen(file_name.c_str(), "rb");
-    if (fp == nullptr)
-        std::cout << "open read file failed" << std::endl;
-    fp = nullptr;
+ // Ф▄┴Х║▄Х╞╩Ф√┤Д╩╤
+void read_file(std::string& file_name) {
+	FILE* fp = nullptr;
+	fp = fopen(file_name.c_str(), "rb");
+	if (fp == nullptr)
+		std::cout << "open read file failed" << std::endl;
+	fp = nullptr;
 }
-

@@ -1,11 +1,4 @@
-﻿#include <stdio.h>
-#include <iostream>
-#include <unordered_map>
-#include <chrono>
-#include <string.h>
-#include<math.h>		// 用于计算id取后几位
-
-#include "read_write.h"
+﻿#include "read_write.h"
 
 // 文件序号与文件标识符的映射, 如key:000, value:000.txt
 std::unordered_map<int, FILE*> m;
@@ -13,15 +6,18 @@ std::unordered_map<int, FILE*> m;
 char* block[MAP_SIZE] = { nullptr };
 // 全局数组,数组元素是每个块字节数,写入前不能超过5,000,000字节,约5MB
 int block_size[MAP_SIZE] = { 0 };
-
+// 经度范围, 纬度范围
+float max_lon = 113.59, min_lon = 113.50, max_lat = 34.84, min_lat = 34.76;
+// id 字段取出的位数, 根据MAP_SIZE而确定, 例如 MAP_SIZE 为 500时, id_digits 为3
+int id_digits = (int)ceil(log(MAP_SIZE) / log(10));
 
 /*
  * 打开写的文件
  */
 void write_file_open() {
 
-	char file_name[] = { 'D',':','\\','d','d','d','d','\\','0','0','0','.','t','x','t','\0' };
-	//char file_name[] = { 'D',':','\\','d','a','t','a','\\','0','0','0','.','t','x','t','\0' };
+	//char file_name[] = { 'D',':','\\','d','d','d','d','\\','0','0','0','.','t','x','t','\0' };
+	char file_name[] = { 'D',':','\\','d','a','t','a','\\','0','0','0','.','t','x','t','\0' };
 	for (int i = 0; i < MAP_SIZE; ++i) {
 		m[i] = fopen(file_name, "w");
 		if (m[i] == nullptr)
@@ -104,7 +100,7 @@ void fwrite_block(const char* line, const int key) {
 /**
  * 处理一行数据，数据以'/n'结尾
  */
-void fread_line(char* line) {
+inline void fread_line(char* line) {
 	char* cur_ptr = line;
 	char new_line[LINE_SIZE];
 	// 存储 id，时间，经度，纬度，速度，方位角，数据来源，运动状态
@@ -117,9 +113,7 @@ void fread_line(char* line) {
 		*new_line_ptr++ = *cur_ptr++;
 	}
 
-	// 取出id后k位,根据MAP_SIZE而确定
-	int k = (int)ceil(log(MAP_SIZE) / log(10));
-	for (i = 0; i < k; ++i) {
+	for (i = 0; i < id_digits; ++i) {
 		if (cur_ptr - line == i + 1) {
 			key += (*(cur_ptr - i - 1) - '0') * (int)pow(10, i);
 			break;
@@ -161,18 +155,24 @@ void fread_line(char* line) {
 		*new_line_ptr++ = *cur_ptr++;
 		++lon_num;
 	}
+
 	// 判断经度范围, 若不属于给定范围, 则直接return 
-	if (check_location(cur_ptr - lon_num, lon_num) == false)
+	if (check_lon(cur_ptr - lon_num, lon_num) == false)
 		return;
+
 	++cur_ptr;
 	*new_line_ptr++ = '\t';		// 以'\t'隔开经度与纬度
-
 
 	//读取纬度
 	while (*cur_ptr != '\t') {
 		*new_line_ptr++ = *cur_ptr++;
 		++lat_num;
 	}
+
+	// 判断纬度范围, 若不属于给定范围, 则直接return 
+	if (check_lat(cur_ptr - lat_num, lat_num) == false)
+		return;
+
 	++cur_ptr;
 	*new_line_ptr++ = '\t';		// 以'\t'隔开纬度与速度
 	//读取速度
@@ -204,6 +204,10 @@ void fread_line(char* line) {
 		*new_line_ptr++ = *cur_ptr++;
 	}
 
+	// 判断数据来源, 若为'2', 则直接return 
+	if (check_data_source(*(cur_ptr - 1)) == false)
+		return;
+
 	++cur_ptr;
 	*new_line_ptr++ = '\t';		// 以'\t'隔开与数据来源与运动状态
 
@@ -231,9 +235,90 @@ void fread_line(char* line) {
 }
 
 /**
+ * 判断是否位于指定区域
+ * lat_begin_ptr: 经度起始的指针
+ * lat_num: 经度所占的位数
+ */
+bool check_lat(char* lat_begin_ptr, int lat_num) {
+
+	// 构造经度(小数形式)
+	char* tmp = nullptr;
+	// 整数部分
+	int part_integer = 0;
+	double part_decimal = 0;
+	// 计算整数部分
+	for (tmp = lat_begin_ptr; tmp < lat_begin_ptr + lat_num; ++tmp) {
+		// 若为小数点, tmp后移, break
+		if (*tmp == '.') {
+			++tmp;
+			break;
+		}
+		else {
+			part_integer *= 10;
+			part_integer += (*tmp - '0');
+		}
+	}
+	// 计算小数部分, k为小数位的阶
+	int k = -1;
+	for (; tmp < lat_begin_ptr + lat_num; ++tmp) {
+		part_decimal += (*tmp - '0') * pow(10, k);
+		--k;
+	}
+	double cur_lat = part_integer + part_decimal;
+	if (cur_lat <= max_lat && cur_lat >= min_lat)
+		return true;
+	return false;
+}
+
+/**
+ * 判断是否位于指定区域
+ * lon_begin_ptr: 经度起始的指针
+ * lon_num: 经度所占的位数
+ */
+inline bool check_lon(char* lon_begin_ptr, int lon_num) {
+
+	// 构造经度(小数形式)
+	char* tmp = nullptr;
+	// 整数部分
+	int part_integer = 0;
+	double part_decimal = 0;
+	// 计算整数部分
+	for (tmp = lon_begin_ptr; tmp < lon_begin_ptr + lon_num; ++tmp) {
+		// 若为小数点, tmp后移, break
+		if (*tmp == '.') {
+			++tmp;
+			break;
+		}
+		else {
+			part_integer *= 10;
+			part_integer += (*tmp - '0');
+		}
+	}
+	// 计算小数部分, k为小数位的阶
+	int k = -1;
+	for (; tmp < lon_begin_ptr + lon_num; ++tmp) {
+		part_decimal += (*tmp - '0') * pow(10, k);
+		--k;
+	}
+	double cur_lon = part_integer + part_decimal;
+	if (cur_lon <= max_lon && cur_lon >= min_lon)
+		return true;
+	return false;
+}
+
+/**
+ * 检查数据来源, 跳过来源为'2'的数据
+ */
+inline bool check_data_source(char data_source) {
+	if (data_source == '2')
+		return false;
+	return true;
+}
+
+/**
  * 解析数据块, 返回需要回退的字节数, 数据块的最后一个字符为'\0'
  */
-int fread_block(char* block) {
+inline int fread_block(char* block) {
 	// 每读到一个'\n',就读取一行
 	char* cur_ptr = block;
 	// 每一行的内容
